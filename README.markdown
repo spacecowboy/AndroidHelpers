@@ -16,7 +16,7 @@ This allows you to take advantage of the screen of tablets while still fully sup
 
 To use this in your own application, use my demo app as a base for how to override the
 necessary methods and make sure to
-change the class names in the layout.xml files as well. If you want to change the relative widths
-of the fragments, change the weights in layout_constants.xml
+change the class names in the **layout.xml** files as well. If you want to change the relative widths
+of the fragments, change the weights in **layout_constants.xml**
 
 Feel free to use this code any way you please.
