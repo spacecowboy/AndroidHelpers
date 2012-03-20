@@ -16,12 +16,8 @@ package com.nononsenseapps.helpers.dualpane.demo;
  * limitations under the License.
  */
 
-import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.MenuItem;
-
-import com.nononsenseapps.helpers.R;
 import com.nononsenseapps.helpers.dualpane.DualLayoutActivity;
 
 /**
@@ -37,39 +33,14 @@ public class DualLayoutDemo extends DualLayoutActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		// I want to tie the hiding/showing animation to the up navigation
-		// button
-		if (getCurrentContent() == CONTENTVIEW.DUAL
-				&& getResources().getBoolean(R.bool.leftHideable)
-				|| getCurrentContent() == CONTENTVIEW.RIGHT) {
-			ActionBar actionBar = getActionBar();
-			actionBar.setDisplayHomeAsUpEnabled(true);
-		}
 	}
 
-	/**
-	 * Catch any clicks on the up navigation button
-	 */
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case android.R.id.home:
-			if (getCurrentContent() == CONTENTVIEW.DUAL) {
-				// Toggle visibility
-				setLeftFragmentVisible(!getLeftFragment().isVisible());
-			} else if (getCurrentContent() == CONTENTVIEW.RIGHT) {
-				// Should not just finish on up-navigation. Should make
-				// sure we bring list to front as the new top activity.
-				Intent intent = new Intent();
-				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-				intent.setClass(this, DualLayoutDemo.class);
+	protected void goUp() {
+		Intent intent = new Intent();
+		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+				.setClass(this, DualLayoutDemo.class);
 
-				startActivity(intent);
-			}
-			return true;
-		}
-
-		return false;
+		startActivity(intent);
 	}
 }

@@ -26,11 +26,13 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 
 public abstract class DualLayoutActivity extends Activity {
-	public static final String SHOWRIGHT = "showRight";
-
 	public enum CONTENTVIEW {
 		DUAL, LEFT, RIGHT
 	};
@@ -52,6 +54,11 @@ public abstract class DualLayoutActivity extends Activity {
 		// Can potentially be null so plan for that
 		rightFragment = getFragmentManager().findFragmentById(
 				R.id.rightFragment);
+
+		// Set up navigation if in right fragment mode
+		if (currentContent.equals(CONTENTVIEW.RIGHT)) {
+			getActionBar().setDisplayHomeAsUpEnabled(true);
+		}
 	}
 
 	/**
@@ -59,21 +66,22 @@ public abstract class DualLayoutActivity extends Activity {
 	 * intent was used to start this activity
 	 */
 	protected void decideContentView() {
-		Intent intent = getIntent();
-		setIntent(intent);
-		if (null != intent && null != intent.getExtras()
-				&& intent.getExtras().getBoolean(SHOWRIGHT)) {
-			currentContent = CONTENTVIEW.RIGHT;
-			// Display right fragment
-			setRightContentView();
+		if (getResources().getBoolean(R.bool.tabletLayout)) {
+			currentContent = CONTENTVIEW.DUAL;
+			setContentView(R.layout.dual_layout);
 		} else {
-			if (getResources().getBoolean(R.bool.tabletLayout)) {
-				currentContent = CONTENTVIEW.DUAL;
+			Intent intent = getIntent();
+			setIntent(intent);
+			if (null != intent && null != intent.getAction()
+					&& intent.getAction().equals(Intent.ACTION_EDIT)) {
+				currentContent = CONTENTVIEW.RIGHT;
+				// Display right fragment
+				setRightContentView();
 			} else {
 				currentContent = CONTENTVIEW.LEFT;
+				// Left or Dual layout is handled automatically
+				setContentView(R.layout.dual_layout);
 			}
-			// Left or Dual layout is handled automatically
-			setContentView(R.layout.dual_layout);
 		}
 	}
 
@@ -103,7 +111,8 @@ public abstract class DualLayoutActivity extends Activity {
 	 * @param visible
 	 */
 	protected void setLeftFragmentVisible(boolean visible) {
-		if (getResources().getBoolean(R.bool.leftHideable)) {
+		if (leftFragment != null && (leftFragment.isVisible() || visible)
+				&& getResources().getBoolean(R.bool.leftHideable)) {
 			final float listWidth = getLeftFragment().getView().getWidth();
 			ViewGroup container = (ViewGroup) findViewById(R.id.dual_layout);
 			// Don't clip the children, we want to draw the entire fragment even
@@ -152,6 +161,11 @@ public abstract class DualLayoutActivity extends Activity {
 			// we have specified that we want layout animations in the layout
 			// xml
 			fragmentTransaction.commit();
+
+			/*
+			 * Display home as up to be able to view the list
+			 */
+			getActionBar().setDisplayHomeAsUpEnabled(!visible);
 		}
 	}
 
@@ -171,5 +185,71 @@ public abstract class DualLayoutActivity extends Activity {
 
 	public CONTENTVIEW getCurrentContent() {
 		return currentContent;
+	}
+
+	/**
+	 * Handle up navigation
+	 */
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case android.R.id.home:
+			onHomePressed();
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+	/**
+	 * Home icon has two behaviours. If this is a phone, home should navigate to
+	 * list If tablet, and portrait mode, home should show the list.
+	 */
+	private void onHomePressed() {
+		if (currentContent.equals(DualLayoutActivity.CONTENTVIEW.DUAL)) {
+			setLeftFragmentVisible(true);
+		} else {
+			goUp();
+		}
+	}
+
+	/**
+	 * Must implement this to launch your main activity. Abstract since your
+	 * intents and classes will be unique to your app
+	 */
+	protected abstract void goUp();
+
+	/**
+	 * Catches any clicks inside right fragment when left fragment can be
+	 * hidden. A click in the right fragment will hide the left fragment
+	 */
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		// If user clicked inside right fragment, and this left fragment can be
+		// hidden, then hide it
+		if (rightFragment != null && leftFragment != null
+				&& leftFragment.isVisible()
+				&& getResources().getBoolean(R.bool.leftHideable)) {
+			View r = rightFragment.getView();
+			float[] xy = getRelativeCoords(ev);
+			if (xy[0] < r.getRight() && xy[0] > r.getLeft()
+					&& xy[1] < r.getBottom() && xy[1] > r.getTop()) {
+				setLeftFragmentVisible(false);
+				return true;
+			}
+		}
+
+		// Else normally
+		return super.dispatchTouchEvent(ev);
+	}
+
+	/**
+	 * Needed because touch event will report absolute coordinates and we only
+	 * have access to relative to our window.
+	 */
+	public float[] getRelativeCoords(MotionEvent e) {
+		// MapView
+		View contentView = getWindow().findViewById(Window.ID_ANDROID_CONTENT);
+		return new float[] { e.getRawX() - contentView.getLeft(),
+				e.getRawY() - contentView.getTop() };
 	}
 }
