@@ -14,6 +14,8 @@ This allows you to take advantage of the screen of tablets while still fully sup
 
 * Medium screens (tablet portrait mode) will display both fragments but the left fragment
 can be hidden. When the left fragment is visible, the right fragment is 50% drawn off screen.
+Clicking inside the right fragment will hide the left fragment by sliding it out of the screen.
+Clicking the application icon will bring the list back.
 
 <img src="http://i.imgur.com/MSiIQ.png" height="50%"/>
 <img src="http://i.imgur.com/ir97R.png" height="50%"/>
